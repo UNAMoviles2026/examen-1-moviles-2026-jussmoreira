@@ -11,9 +11,87 @@ servers:
     description: Servidor de desarrollo local
 
 paths:
+
+  /reservaciones:
+    post:
+      summary: Crear una nueva reservación de espacio de coworking
+      description: >
+        Permite a un usuario registrado reservar un espacio de coworking disponible
+        para una fecha y cantidad de horas específicas. El sistema valida la
+        disponibilidad antes de confirmar la reservación.
+      operationId: crearReservacion
+      tags:
+        - Reservaciones
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservacionRequest'
+            example:
+              usuarioId: "usr_a1b2c3"
+              espacioId: "esp_001"
+              fechaReservacion: "2026-05-10"
+              horaInicio: "09:00"
+              cantidadHoras: 4
+              notas: "Se necesita proyector y configuración para 6 personas"
+      responses:
+        '201':
+          description: Reservación creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservacionResponse'
+              example:
+                reservacionId: "res_xyz789"
+                usuarioId: "usr_a1b2c3"
+                espacioId: "esp_001"
+                nombreEspacio: "Hub de Innovación – Sala A"
+                fechaReservacion: "2026-05-10"
+                horaInicio: "09:00"
+                horaFin: "13:00"
+                cantidadHoras: 4
+                precioTotal: 60.00
+                moneda: "USD"
+                estado: "CONFIRMADA"
+                creadaEn: "2026-04-25T08:30:00Z"
+        '400':
+          description: Datos de la solicitud inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "ERROR_VALIDACION"
+                mensaje: "cantidadHoras debe estar entre 1 y 12"
+                timestamp: "2026-04-25T08:30:00Z"
+        '404':
+          description: Espacio o usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "RECURSO_NO_ENCONTRADO"
+                mensaje: "El espacio con id 'esp_001' no existe"
+                timestamp: "2026-04-25T08:30:00Z"
+        '409':
+          description: El espacio no está disponible para la fecha y hora solicitadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "ESPACIO_NO_DISPONIBLE"
+                mensaje: "El espacio seleccionado ya se encuentra reservado para ese horario"
+                timestamp: "2026-04-25T08:30:00Z"
+
   /espacios/{espacioId}:
     put:
-      summary: Actualizar información de un espacio de coworking
+      summary: Actualizar la información y disponibilidad de un espacio de coworking
+      description: >
+        Permite a los administradores actualizar los detalles de un espacio,
+        incluyendo su estado de disponibilidad, precio y capacidad.
       operationId: actualizarEspacio
       tags:
         - Espacios
@@ -88,6 +166,72 @@ paths:
 
 components:
   schemas:
+
+    ReservacionRequest:
+      type: object
+      required:
+        - usuarioId
+        - espacioId
+        - fechaReservacion
+        - horaInicio
+        - cantidadHoras
+      properties:
+        usuarioId:
+          type: string
+          description: Identificador único del usuario que realiza la reservación
+        espacioId:
+          type: string
+          description: Identificador único del espacio a reservar
+        fechaReservacion:
+          type: string
+          format: date
+          description: Fecha de la reservación (YYYY-MM-DD)
+        horaInicio:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$"
+          description: Hora de inicio en formato HH:mm (24 horas)
+        cantidadHoras:
+          type: integer
+          minimum: 1
+          maximum: 12
+          description: Número de horas a reservar el espacio
+        notas:
+          type: string
+          maxLength: 500
+          description: Notas adicionales opcionales
+
+    ReservacionResponse:
+      type: object
+      properties:
+        reservacionId:
+          type: string
+        usuarioId:
+          type: string
+        espacioId:
+          type: string
+        nombreEspacio:
+          type: string
+        fechaReservacion:
+          type: string
+          format: date
+        horaInicio:
+          type: string
+        horaFin:
+          type: string
+        cantidadHoras:
+          type: integer
+        precioTotal:
+          type: number
+          format: double
+        moneda:
+          type: string
+        estado:
+          type: string
+          enum: [CONFIRMADA, PENDIENTE, CANCELADA]
+        creadaEn:
+          type: string
+          format: date-time
+
     EspacioActualizarRequest:
       type: object
       required:
