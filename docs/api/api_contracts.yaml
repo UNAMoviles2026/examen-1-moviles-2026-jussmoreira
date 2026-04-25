@@ -1,0 +1,155 @@
+openapi: 3.0.3
+info:
+  title: API de CoworkingSpaces
+  description: API REST para la aplicación móvil de gestión de espacios de coworking
+  version: 1.0.0
+
+servers:
+  - url: https://api.coworkingspaces.com/api/v1
+    description: Servidor de producción
+  - url: http://localhost:8080/api/v1
+    description: Servidor de desarrollo local
+
+paths:
+  /espacios/{espacioId}:
+    put:
+      summary: Actualizar información de un espacio de coworking
+      operationId: actualizarEspacio
+      tags:
+        - Espacios
+      parameters:
+        - name: espacioId
+          in: path
+          required: true
+          description: Identificador único del espacio de coworking
+          schema:
+            type: string
+          example: "esp_001"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EspacioActualizarRequest'
+            example:
+              nombre: "Hub de Innovación – Sala A"
+              descripcion: "Espacio abierto moderno con iluminación natural."
+              ubicacion: "San José, Escazú – Torre Sabana, Piso 4"
+              capacidad: 10
+              precioPorHora: 15.00
+              disponible: true
+      responses:
+        '200':
+          description: Espacio actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EspacioResponse'
+              example:
+                espacioId: "esp_001"
+                nombre: "Hub de Innovación – Sala A"
+                urlImagen: "https://storage.coworkingspaces.com/espacios/esp_001.jpg"
+                descripcion: "Espacio abierto moderno con iluminación natural."
+                ubicacion: "San José, Escazú – Torre Sabana, Piso 4"
+                capacidad: 10
+                precioPorHora: 15.00
+                disponible: true
+                actualizadoEn: "2026-04-25T10:00:00Z"
+        '400':
+          description: Datos de la solicitud inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "ERROR_VALIDACION"
+                mensaje: "precioPorHora debe ser mayor que 0"
+                timestamp: "2026-04-25T10:00:00Z"
+        '403':
+          description: Permisos insuficientes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "ACCESO_DENEGADO"
+                mensaje: "No tiene permisos para modificar espacios"
+                timestamp: "2026-04-25T10:00:00Z"
+        '404':
+          description: Espacio no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "RECURSO_NO_ENCONTRADO"
+                mensaje: "El espacio con id 'esp_001' no existe"
+                timestamp: "2026-04-25T10:00:00Z"
+
+components:
+  schemas:
+    EspacioActualizarRequest:
+      type: object
+      required:
+        - nombre
+        - ubicacion
+        - capacidad
+        - precioPorHora
+        - disponible
+      properties:
+        nombre:
+          type: string
+          maxLength: 100
+        imagen:
+          type: string
+          format: binary
+          description: Archivo de imagen del espacio
+        descripcion:
+          type: string
+          maxLength: 1000
+        ubicacion:
+          type: string
+        capacidad:
+          type: integer
+          minimum: 1
+        precioPorHora:
+          type: number
+          format: double
+          minimum: 0.01
+        disponible:
+          type: boolean
+
+    EspacioResponse:
+      type: object
+      properties:
+        espacioId:
+          type: string
+        nombre:
+          type: string
+        urlImagen:
+          type: string
+        descripcion:
+          type: string
+        ubicacion:
+          type: string
+        capacidad:
+          type: integer
+        precioPorHora:
+          type: number
+          format: double
+        disponible:
+          type: boolean
+        actualizadoEn:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        mensaje:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
